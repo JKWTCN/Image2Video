@@ -1,0 +1,80 @@
+﻿<Window x:Class="Image2Video.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Image2Video"
+        mc:Ignorable="d"
+        Title="图片生成视频展示工具" Height="110" Width="560">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+            <RowDefinition Height="Auto"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3.5*"></ColumnDefinition>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" x:Name="files_dir" ></TextBox>
+            <Button  Grid.Column="1" Name="open_files"  Height="19" VerticalAlignment="Bottom" Click="Open_files_Click">打开文件夹</Button>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0" >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">生成分辨率:</Label>
+                    <TextBox Grid.Column="1" Name="ret_width" HorizontalAlignment="Center" VerticalAlignment="Center" >1080</TextBox>
+                    <Label Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">X</Label>
+                    <TextBox Grid.Column="3" Name="ret_height" HorizontalAlignment="Center" VerticalAlignment="Center" >1920</TextBox>
+                </Grid>
+                <Grid Grid.Column="1" >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" >切换间隔:</Label>
+                    <TextBox Grid.Column="1"  HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="duration" >5</TextBox>
+                    <Label Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" >s</Label>
+
+                </Grid>
+                <Grid Grid.Column="2" >
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                        <ColumnDefinition Width="Auto"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">帧率:</Label>
+                    <TextBox Grid.Column="1"  HorizontalAlignment="Center" VerticalAlignment="Center" Name="fps">25</TextBox>
+                </Grid>
+            </Grid>
+        </Grid>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"></ColumnDefinition>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <CheckBox Grid.Column="0" IsChecked="False" HorizontalAlignment="Center" VerticalAlignment="Center" Name="is_all">包括目录内全部文件</CheckBox>
+            <CheckBox Grid.Column="1" IsChecked="True" HorizontalAlignment="Center" VerticalAlignment="Center" Name="has_start">带头图</CheckBox>
+            <CheckBox Grid.Column="2" IsChecked="False" HorizontalAlignment="Center" VerticalAlignment="Center" Name="has_end">带尾图</CheckBox>
+            <Button Grid.Column="3"  HorizontalAlignment="Center" Name="all_do" Height="19" VerticalAlignment="Top" Click="All_do_Click" >开始</Button>
+        </Grid>
+        <Grid Grid.Row="3" >
+            <ProgressBar  x:Name="progressBar" Height="10"   />
+        </Grid>
+    </Grid>
+</Window>
