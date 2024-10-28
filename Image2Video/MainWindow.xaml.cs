@@ -71,6 +71,16 @@ namespace Image2Video
 
         private void All_do_Click(object sender, RoutedEventArgs e)
         {
+            if (!Directory.Exists("./Cache"))
+                Directory.CreateDirectory("./Cache");
+            else
+            {
+                Directory.Delete("./Cache", true);
+                Directory.CreateDirectory("./Cache");
+            }
+            // 输出文件夹
+            if (!Directory.Exists("./Res"))
+                Directory.CreateDirectory("./Res");
             string[] filedirs;
             if (is_all.IsChecked == true)
                 filedirs = Directory.GetFiles(files_dir.Text, "*", SearchOption.AllDirectories);
@@ -147,8 +157,6 @@ namespace Image2Video
                 if (Directory.Exists("./Cache"))
                     Directory.Delete("./Cache", true);
             });
-
-
         }
 
         private Boolean Standardize_images(ref Mat mat)
