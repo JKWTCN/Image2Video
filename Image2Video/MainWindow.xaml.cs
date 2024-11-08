@@ -111,7 +111,7 @@ namespace Image2Video
                     i++;
                     Debug.WriteLine($"开始处理第{i}张");
                     string ext = Path.GetExtension(file);
-                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".PNG")
+                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".PNG" || ext == ".JPEG" || ext == ".JPG")
                     {
                         Mat mat = Cv2.ImRead(file);
                         var result = Standardize_images(ref mat);
