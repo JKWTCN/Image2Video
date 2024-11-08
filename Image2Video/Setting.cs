@@ -22,7 +22,7 @@ namespace Image2Video
         {
             try
             {
-                Setting tmp = JsonConvert.DeserializeObject<Setting>(new StreamReader("setting.json").ReadToEnd());
+                Setting tmp = JsonConvert.DeserializeObject<Setting>(File.ReadAllText("setting.json"));
                 this.ret_width = tmp.ret_width;
                 this.ret_height = tmp.ret_height;
                 this.duration = tmp.duration;
@@ -68,10 +68,7 @@ namespace Image2Video
 
         public void SaveSetting()
         {
-            using (var writer = System.IO.File.CreateText("setting.json"))
-            {
-                writer.Write(JsonConvert.SerializeObject(this));
-            }
+            File.WriteAllText("setting.json", JsonConvert.SerializeObject(this));
         }
     }
 

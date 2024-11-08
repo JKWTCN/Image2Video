@@ -29,7 +29,7 @@ namespace Image2Video
             // 输出文件夹
             if (!Directory.Exists("./Res"))
                 Directory.CreateDirectory("./Res");
-            Setting setting = new Setting();
+            Setting setting = new();
             setting.LoadSetting();
             UpdateUi(setting);
         }
@@ -80,7 +80,7 @@ namespace Image2Video
             progressBar.IsIndeterminate = false;
 
             //保存设置
-            Setting setting = new Setting();
+            Setting setting = new();
             Dispatcher.Invoke(() => setting.UpdateSetting());
             setting.SaveSetting();
 
@@ -221,7 +221,7 @@ namespace Image2Video
             //Cv2.ImWrite("Cache/tmp.jpg", dst);
             //移动速率 
             int sec = (dst.Height - canvas_height) / velocity;
-            if (sec <= 0)
+            if (sec <= _sec)
                 sec = _sec;
             else if (sec > 30) sec = 30;
             int ratio = (dst.Height - canvas_height) / (sec * f) + 1;
