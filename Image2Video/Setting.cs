@@ -34,7 +34,7 @@ namespace Image2Video
                 this.has_start = tmp.has_start;
                 this.has_end = tmp.has_end;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 this.ret_width = 1080;
                 this.ret_height = 1920;

@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image2Video"
         mc:Ignorable="d"
-        Title="图片生成视频展示工具" Height="110" Width="600">
+        Title="图片生成视频展示工具" Height="130" Width="600">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
             <RowDefinition Height="Auto"></RowDefinition>
@@ -20,8 +21,17 @@
             </Grid.ColumnDefinitions>
             <TextBox Grid.Column="0" x:Name="files_dir" ></TextBox>
             <Button  Grid.Column="1" Name="open_files"  Height="19" VerticalAlignment="Bottom" Click="Open_files_Click">打开文件夹</Button>
+            
         </Grid>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3.5*"></ColumnDefinition>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0" x:Name="bgm_dir" ></TextBox>
+            <Button  Grid.Column="1" Name="open_bgm" Click="open_bgm_Click">打开BGM</Button>
+        </Grid>
+        <Grid Grid.Row="2">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"></ColumnDefinition>
@@ -85,7 +95,7 @@
                 </Grid>
             </Grid>
         </Grid>
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*"></ColumnDefinition>
                 <ColumnDefinition Width="2*"></ColumnDefinition>
@@ -109,7 +119,7 @@
             <CheckBox Grid.Column="3" IsChecked="False" HorizontalAlignment="Center" VerticalAlignment="Center" Name="has_end">带尾图</CheckBox>
             <Button Grid.Column="4"  HorizontalAlignment="Center" Name="all_do" Height="19" VerticalAlignment="Top" Click="All_do_Click" >开始</Button>
         </Grid>
-        <Grid Grid.Row="3" >
+        <Grid Grid.Row="4" >
             <ProgressBar  x:Name="progressBar" Height="10"   />
         </Grid>
     </Grid>

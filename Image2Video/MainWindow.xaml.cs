@@ -1,7 +1,10 @@
 ﻿using Microsoft.WindowsAPICodePack.Dialogs;
 using OpenCvSharp;
+using Shell32;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using Path = System.IO.Path;
 using Rect = OpenCvSharp.Rect;
@@ -70,6 +73,10 @@ namespace Image2Video
             // 输出文件夹
             if (!Directory.Exists("./Res"))
                 Directory.CreateDirectory("./Res");
+            if (files_dir.Text == null || files_dir.Text == "")
+            {
+                return;
+            }
             string[] filedirs;
             if (is_all.IsChecked == true)
                 filedirs = Directory.GetFiles(files_dir.Text, "*", SearchOption.AllDirectories);
@@ -84,7 +91,7 @@ namespace Image2Video
             Dispatcher.Invoke(() => setting.UpdateSetting());
             setting.SaveSetting();
 
-            Task.Run(() =>
+            _ = Task.Run(() =>
             {
                 bool btn_has_start = true, btn_has_end = false;
                 Dispatcher.Invoke(() => btn_has_start = (bool)has_start.IsChecked);
@@ -135,27 +142,110 @@ namespace Image2Video
                     Dispatcher.Invoke(() => progressBar.Value = 100);
                 }
                 Dispatcher.Invoke(() => progressBar.IsIndeterminate = true);
-                string arg = "";
-                bool gpu_check = true, cpu_check = false;
-                string fps_text = "60", file_dir_text = "";
+                string fps_text = "60", file_dir_text = "", bgm_dir_text = "";
                 Dispatcher.Invoke(() => fps_text = fps.Text);
                 Dispatcher.Invoke(() => file_dir_text = files_dir.Text);
+                Dispatcher.Invoke(() => bgm_dir_text = bgm_dir.Text);
                 string ffmpeg_path = System.Environment.CurrentDirectory + @"\ffmpeg\ffmpeg.exe";
-                ProcessStartInfo info = new ProcessStartInfo(ffmpeg_path, $" -y -r {fps_text} -i {System.Environment.CurrentDirectory}\\Cache\\%d.jpg {System.Environment.CurrentDirectory}\\Cache\\output.mp4");
-                info.UseShellExecute = true;
-                info.RedirectStandardInput = false;
-                info.RedirectStandardOutput = false;
-                info.RedirectStandardError = false;
-                info.CreateNoWindow = true;
+                string cache_dir = "Cache";
+
+                //合成MP4（无声）
+                ProcessStartInfo info = new ProcessStartInfo(ffmpeg_path, $" -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4")
+                {
+                    UseShellExecute = true,
+                    RedirectStandardInput = false,
+                    RedirectStandardOutput = false,
+                    RedirectStandardError = false,
+                    CreateNoWindow = true
+                };
                 Process AppProcess = System.Diagnostics.Process.Start(info);
                 AppProcess.WaitForExit();
-                var files_dir_list = file_dir_text.Split("\\");
-                if (File.Exists($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4"))
+
+                // 处理MP3 生成和MP4同样长的MP3文件
+                if (bgm_dir_text != "" || bgm_dir_text != null)
                 {
-                    File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                    int mp4sec = ReadMp4During(System.Environment.CurrentDirectory + "\\Cache\\output.mp4");
+                    int mp3sec = ReadMp3During(bgm_dir_text);
+                    FileInfo file = new FileInfo(bgm_dir_text);
+                    if (file.Exists) //可以判断源文件是否存在
+                    {
+                        // 这里是true的话覆盖
+                        file.CopyTo($"{System.Environment.CurrentDirectory}\\Cache\\1.mp3", true);
+                    }
+                    string concat_str = $"concat:{cache_dir}\\1.mp3";
+                    if (mp4sec > mp3sec)
+                    {
+                        for (i = 0; i < Math.Ceiling((double)mp4sec / (double)mp3sec); i++)
+                        {
+                            concat_str += $"|{cache_dir}\\1.mp3";
+                        }
+                        ProcessStartInfo info2 = new ProcessStartInfo(ffmpeg_path, $" -i \"{concat_str}\" -y -acodec copy {cache_dir}\\b.mp3")
+                        {
+                            UseShellExecute = true,
+                            RedirectStandardInput = false,
+                            RedirectStandardOutput = false,
+                            RedirectStandardError = false,
+                            CreateNoWindow = true
+                        };
+                        Process AppProcess2 = System.Diagnostics.Process.Start(info2);
+                        AppProcess2.WaitForExit();
+
+                        ProcessStartInfo info3 = new ProcessStartInfo(ffmpeg_path, $" -i {cache_dir}\\b.mp3 -t {mp4sec} -y -acodec copy {cache_dir}\\c.mp3")
+                        {
+                            UseShellExecute = true,
+                            RedirectStandardInput = false,
+                            RedirectStandardOutput = false,
+                            RedirectStandardError = false,
+                            CreateNoWindow = true
+                        };
+                        Process AppProcess3 = System.Diagnostics.Process.Start(info3);
+                        AppProcess3.WaitForExit();
+                    }
+                    else if (mp4sec < mp3sec)
+                    {
+                        ProcessStartInfo info2 = new ProcessStartInfo(ffmpeg_path, $" -i {cache_dir}\\1.mp3 -y -t {mp4sec} -acodec copy {cache_dir}\\c.mp3")
+                        {
+                            UseShellExecute = true,
+                            RedirectStandardInput = false,
+                            RedirectStandardOutput = false,
+                            RedirectStandardError = false,
+                            CreateNoWindow = true
+                        };
+                        Process AppProcess2 = System.Diagnostics.Process.Start(info2);
+                        AppProcess2.WaitForExit();
+                    }
+
+                    ProcessStartInfo info4 = new ProcessStartInfo(ffmpeg_path, $" -i {cache_dir}\\c.mp3 -i {cache_dir}\\output.mp4 -y {cache_dir}\\d.mp4")
+                    {
+                        UseShellExecute = true,
+                        RedirectStandardInput = false,
+                        RedirectStandardOutput = false,
+                        RedirectStandardError = false,
+                        CreateNoWindow = true
+                    };
+                    Process AppProcess4 = System.Diagnostics.Process.Start(info4);
+                    AppProcess4.WaitForExit();
+
+                    //导出带BGM的mp4
+                    var files_dir_list = file_dir_text.Split("\\");
+                    if (File.Exists($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4"))
+                    {
+                        File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                    }
+                    File.Move("./Cache/d.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
                 }
-                File.Move("./Cache/output.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                else
+                {
+                    // 导出无声MP4
+                    var files_dir_list = file_dir_text.Split("\\");
+                    if (File.Exists($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4"))
+                    {
+                        File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                    }
+                    File.Move("./Cache/output.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                }
                 Dispatcher.Invoke(() => progressBar.IsIndeterminate = false);
+                //清理缓存
                 if (Directory.Exists("./Cache"))
                     Directory.Delete("./Cache", true);
             });
@@ -225,7 +315,7 @@ namespace Image2Video
             int sec = (dst.Height - canvas_height) / velocity;
             if (sec <= _sec)
                 sec = _sec;
-            else if (sec > 30) sec = 30;
+            else if (sec > 60) sec = 60;
             int ratio = (dst.Height - canvas_height) / (sec * f) + 1;
             int end_frame = 0;
             //长图头停顿
@@ -278,5 +368,63 @@ namespace Image2Video
 
         }
 
+        private void open_bgm_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.OpenFileDialog openFileDialog = new System.Windows.Forms.OpenFileDialog();
+            openFileDialog.Filter = "音频文件|*.mp3|所有文件|*.*";
+            openFileDialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            openFileDialog.Title = "打开BGM";
+            openFileDialog.Multiselect = false;
+            openFileDialog.InitialDirectory = "../";
+            // 显示文件对话框
+            if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                // 获取用户选择的文件路径
+                bgm_dir.Text = openFileDialog.FileName;
+            }
+
+        }
+        //获取MP4视频时长
+        private int ReadMp4During(string filePath)
+        {
+            Debug.WriteLine(filePath);
+            ShellClass sc = new ShellClass();
+            Folder dir = sc.NameSpace(Path.GetDirectoryName(filePath));
+            FolderItem item = dir.ParseName(Path.GetFileName(filePath));
+            StringBuilder sb = new StringBuilder();
+            string pattern = @"\d+";
+            int i = 0, hour = 0, min = 0, sec = 0;
+            foreach (Match match in Regex.Matches(dir.GetDetailsOf(item, 27), pattern))
+            {
+                if (i == 0) hour = int.Parse(match.Value);
+                else if (i == 1) min = int.Parse(match.Value);
+                else if (i == 2) sec = int.Parse(match.Value);
+                i++;
+            }
+            int all_sec = hour * 3600 + min * 60 + sec;
+            Debug.WriteLine($"{filePath}->{dir.GetDetailsOf(item, 27)}合{all_sec}秒");
+            return all_sec;
+        }
+
+        //获取MP3时长
+        private int ReadMp3During(string filePath)
+        {
+            ShellClass sc = new ShellClass();
+            Folder dir = sc.NameSpace(Path.GetDirectoryName(filePath));
+            FolderItem item = dir.ParseName(Path.GetFileName(filePath));
+            StringBuilder sb = new StringBuilder();
+            string pattern = @"\d+";
+            int i = 0, hour = 0, min = 0, sec = 0;
+            foreach (Match match in Regex.Matches(dir.GetDetailsOf(item, 27), pattern))
+            {
+                if (i == 0) hour = int.Parse(match.Value);
+                else if (i == 1) min = int.Parse(match.Value);
+                else if (i == 2) sec = int.Parse(match.Value);
+                i++;
+            }
+            int all_sec = hour * 3600 + min * 60 + sec;
+            Debug.WriteLine($"{filePath}->{dir.GetDetailsOf(item, 27)}合{all_sec}秒");
+            return all_sec;
+        }
     }
 }
