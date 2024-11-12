@@ -108,18 +108,20 @@ namespace Image2Video
                 }
                 foreach (var file in filedirs)
                 {
-                    i++;
                     Debug.WriteLine($"开始处理第{i}张");
                     string ext = Path.GetExtension(file);
                     if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".PNG" || ext == ".JPEG" || ext == ".JPG")
                     {
+                        i++;
                         Mat mat = Cv2.ImRead(file);
                         var result = Standardize_images(ref mat);
                         if (result)
                             Img2frame(mat, ref now_frame);
                         else LongImg2frame(mat, ref now_frame);
+                        Dispatcher.Invoke(() => progressBar.Value = 100 * (i + 1) / all);
+
                     }
-                    Dispatcher.Invoke(() => progressBar.Value = 100 * (i + 1) / all);
+                    else continue;
                 }
                 if (btn_has_end == true)
                 {
@@ -232,6 +234,7 @@ namespace Image2Video
                 now_frame++;
                 Mat tmp = dst.Clone(new Rect(0, 0, canvas_width, canvas_height));
                 Cv2.ImWrite($"Cache/{now_frame}.jpg", tmp);
+                GC.Collect();
             }
             for (int i = 0; i < f * sec; i++)
             {
@@ -245,6 +248,7 @@ namespace Image2Video
                     tmp = dst.Clone(new Rect(0, dst.Height - canvas_height, canvas_width, canvas_height));
                 }
                 Cv2.ImWrite($"Cache/{now_frame}.jpg", tmp);
+                GC.Collect();
             }
             //长图尾停顿
             for (int i = 0; i < f * _long_image_end / 1000; i++)
@@ -252,6 +256,7 @@ namespace Image2Video
                 now_frame++;
                 Mat tmp = dst.Clone(new Rect(0, end_frame, canvas_width, canvas_height));
                 Cv2.ImWrite($"Cache/{now_frame}.jpg", tmp);
+                GC.Collect();
             }
         }
 
@@ -268,6 +273,7 @@ namespace Image2Video
             {
                 now_frame++;
                 Cv2.ImWrite($"Cache/{now_frame}.jpg", mat);
+                GC.Collect();
             }
 
         }
