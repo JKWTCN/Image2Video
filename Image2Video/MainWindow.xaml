@@ -21,15 +21,16 @@
             </Grid.ColumnDefinitions>
             <TextBox Grid.Column="0" x:Name="files_dir" ></TextBox>
             <Button  Grid.Column="1" Name="open_files"  Height="19" VerticalAlignment="Bottom" Click="Open_files_Click">打开文件夹</Button>
-            
+
         </Grid>
         <Grid Grid.Row="1" >
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3.5*"></ColumnDefinition>
+                <ColumnDefinition Width="AUTO"></ColumnDefinition>
                 <ColumnDefinition Width="1*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" x:Name="bgm_dir" ></TextBox>
-            <Button  Grid.Column="1" Name="open_bgm" Click="open_bgm_Click">打开BGM</Button>
+            <TextBlock Grid.Column="0" >请选择你的BGM：</TextBlock>
+            <ComboBox  Grid.Column="1" x:Name="BGM_Combo"  DisplayMemberPath="Name" SelectedValuePath="ID"></ComboBox>
+
         </Grid>
         <Grid Grid.Row="2">
             <Grid>

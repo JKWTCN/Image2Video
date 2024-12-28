@@ -11,16 +11,39 @@ using Rect = OpenCvSharp.Rect;
 using Window = System.Windows.Window;
 namespace Image2Video
 {
+
+    public class BGM
+    {
+        public int ID { get; set; }
+        public string Name { get; set; }
+    }
+
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
     public partial class MainWindow : Window
     {
+        private void BGM_LOAD()
+        {
+            List<BGM> list = new List<BGM>();
+            string[] files = Directory.GetFiles("BGM", "*.mp3");
+            foreach (var file in files)
+            {
+                list.Add(new BGM { ID = list.Count + 1, Name = file });
+            }
+            BGM_Combo.ItemsSource = list;
+
+        }
         public MainWindow()
         {
             InitializeComponent();
             //Debug.WriteLine(System.Environment.CurrentDirectory);
             this.Closing += CleanCache;
+            //生成BGM文件夹
+            if (!Directory.Exists("./BGM"))
+                Directory.CreateDirectory("./BGM");
             // 生成缓存文件夹
             if (!Directory.Exists("./Cache"))
                 Directory.CreateDirectory("./Cache");
@@ -35,6 +58,7 @@ namespace Image2Video
             Setting setting = new();
             setting.LoadSetting();
             UpdateUi(setting);
+            BGM_LOAD();
         }
 
         /// <summary>
@@ -145,7 +169,7 @@ namespace Image2Video
                 string fps_text = "60", file_dir_text = "", bgm_dir_text = "";
                 Dispatcher.Invoke(() => fps_text = fps.Text);
                 Dispatcher.Invoke(() => file_dir_text = files_dir.Text);
-                Dispatcher.Invoke(() => bgm_dir_text = bgm_dir.Text);
+                Dispatcher.Invoke(() => bgm_dir_text = BGM_Combo.Text);
                 string ffmpeg_path = System.Environment.CurrentDirectory + @"\ffmpeg\ffmpeg.exe";
                 string cache_dir = "Cache";
 
@@ -162,7 +186,7 @@ namespace Image2Video
                 AppProcess.WaitForExit();
 
                 // 处理MP3 生成和MP4同样长的MP3文件
-                if (bgm_dir_text != "" || bgm_dir_text != null)
+                if (bgm_dir_text != "" && bgm_dir_text != null)
                 {
                     int mp4sec = ReadMp4During(System.Environment.CurrentDirectory + "\\Cache\\output.mp4");
                     int mp3sec = ReadMp3During(bgm_dir_text);
@@ -380,7 +404,7 @@ namespace Image2Video
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 // 获取用户选择的文件路径
-                bgm_dir.Text = openFileDialog.FileName;
+                //bgm_dir.Text = openFileDialog.FileName;
             }
 
         }
@@ -409,6 +433,7 @@ namespace Image2Video
         //获取MP3时长
         private int ReadMp3During(string filePath)
         {
+            filePath = Path.GetFullPath(filePath);
             ShellClass sc = new ShellClass();
             Folder dir = sc.NameSpace(Path.GetDirectoryName(filePath));
             FolderItem item = dir.ParseName(Path.GetFileName(filePath));
