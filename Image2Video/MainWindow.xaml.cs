@@ -36,6 +36,7 @@ namespace Image2Video
             BGM_Combo.ItemsSource = list;
 
         }
+        String uuid = Guid.NewGuid().ToString();
         public MainWindow()
         {
             InitializeComponent();
@@ -44,13 +45,15 @@ namespace Image2Video
             //生成BGM文件夹
             if (!Directory.Exists("./BGM"))
                 Directory.CreateDirectory("./BGM");
-            // 生成缓存文件夹
             if (!Directory.Exists("./Cache"))
                 Directory.CreateDirectory("./Cache");
+            // 生成缓存文件夹
+            if (!Directory.Exists($"./Cache/{uuid}"))
+                Directory.CreateDirectory($"./Cache/{uuid}");
             else
             {
-                Directory.Delete("./Cache", true);
-                Directory.CreateDirectory("./Cache");
+                Directory.Delete($"./Cache/{uuid}", true);
+                Directory.CreateDirectory($"./Cache/{uuid}");
             }
             // 输出文件夹
             if (!Directory.Exists("./Res"))
@@ -66,8 +69,8 @@ namespace Image2Video
         /// </summary>
         private void CleanCache(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (Directory.Exists("./Cache"))
-                Directory.Delete("./Cache", true);
+            if (Directory.Exists($"./Cache/{uuid}"))
+                Directory.Delete($"./Cache/{uuid}", true);
         }
 
         private void Open_files_Click(object sender, RoutedEventArgs e)
@@ -87,12 +90,12 @@ namespace Image2Video
 
         private void All_do_Click(object sender, RoutedEventArgs e)
         {
-            if (!Directory.Exists("./Cache"))
-                Directory.CreateDirectory("./Cache");
+            if (!Directory.Exists($"./Cache/{uuid}"))
+                Directory.CreateDirectory($"./Cache/{uuid}");
             else
             {
-                Directory.Delete("./Cache", true);
-                Directory.CreateDirectory("./Cache");
+                Directory.Delete($"./Cache/{uuid}", true);
+                Directory.CreateDirectory($"./Cache/{uuid}");
             }
             // 输出文件夹
             if (!Directory.Exists("./Res"))
@@ -171,7 +174,7 @@ namespace Image2Video
                 Dispatcher.Invoke(() => file_dir_text = files_dir.Text);
                 Dispatcher.Invoke(() => bgm_dir_text = BGM_Combo.Text);
                 string ffmpeg_path = System.Environment.CurrentDirectory + @"\ffmpeg\ffmpeg.exe";
-                string cache_dir = "Cache";
+                string cache_dir = $"Cache\\{uuid}";
 
                 //合成MP4（无声）
                 ProcessStartInfo info = new ProcessStartInfo(ffmpeg_path, $" -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4")
@@ -188,13 +191,13 @@ namespace Image2Video
                 // 处理MP3 生成和MP4同样长的MP3文件
                 if (bgm_dir_text != "" && bgm_dir_text != null)
                 {
-                    int mp4sec = ReadMp4During(System.Environment.CurrentDirectory + "\\Cache\\output.mp4");
+                    int mp4sec = ReadMp4During(System.Environment.CurrentDirectory + $"\\Cache\\{uuid}\\output.mp4");
                     int mp3sec = ReadMp3During(bgm_dir_text);
                     FileInfo file = new FileInfo(bgm_dir_text);
                     if (file.Exists) //可以判断源文件是否存在
                     {
                         // 这里是true的话覆盖
-                        file.CopyTo($"{System.Environment.CurrentDirectory}\\Cache\\1.mp3", true);
+                        file.CopyTo($"{System.Environment.CurrentDirectory}\\Cache\\{uuid}\\1.mp3", true);
                     }
                     string concat_str = $"concat:{cache_dir}\\1.mp3";
                     if (mp4sec > mp3sec)
@@ -256,7 +259,7 @@ namespace Image2Video
                     {
                         File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
                     }
-                    File.Move("./Cache/d.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                    File.Move($"./Cache/{uuid}/d.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
                 }
                 else
                 {
@@ -266,12 +269,12 @@ namespace Image2Video
                     {
                         File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
                     }
-                    File.Move("./Cache/output.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                    File.Move($"./Cache/{uuid}/output.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
                 }
                 Dispatcher.Invoke(() => progressBar.IsIndeterminate = false);
                 //清理缓存
-                if (Directory.Exists("./Cache"))
-                    Directory.Delete("./Cache", true);
+                if (Directory.Exists($"./Cache/{uuid}"))
+                    Directory.Delete($"./Cache/{uuid}", true);
             });
         }
 
@@ -347,7 +350,7 @@ namespace Image2Video
             {
                 now_frame++;
                 Mat tmp = dst.Clone(new Rect(0, 0, canvas_width, canvas_height));
-                Cv2.ImWrite($"Cache/{now_frame}.jpg", tmp);
+                Cv2.ImWrite($"Cache/{uuid}/{now_frame}.jpg", tmp);
                 GC.Collect();
             }
             for (int i = 0; i < f * sec; i++)
@@ -361,7 +364,7 @@ namespace Image2Video
                     end_frame = dst.Height - canvas_height;
                     tmp = dst.Clone(new Rect(0, dst.Height - canvas_height, canvas_width, canvas_height));
                 }
-                Cv2.ImWrite($"Cache/{now_frame}.jpg", tmp);
+                Cv2.ImWrite($"Cache/{uuid}/{now_frame}.jpg", tmp);
                 GC.Collect();
             }
             //长图尾停顿
@@ -369,7 +372,7 @@ namespace Image2Video
             {
                 now_frame++;
                 Mat tmp = dst.Clone(new Rect(0, end_frame, canvas_width, canvas_height));
-                Cv2.ImWrite($"Cache/{now_frame}.jpg", tmp);
+                Cv2.ImWrite($"Cache/{uuid}/{now_frame}.jpg", tmp);
                 GC.Collect();
             }
         }
@@ -386,7 +389,7 @@ namespace Image2Video
             for (int i = 0; i < f * sec; i++)
             {
                 now_frame++;
-                Cv2.ImWrite($"Cache/{now_frame}.jpg", mat);
+                Cv2.ImWrite($"Cache/{uuid}/{now_frame}.jpg", mat);
                 GC.Collect();
             }
 
