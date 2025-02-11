@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="icon.ico" />
+    <Resource Include="icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,6 +25,12 @@
     <Reference Include="Interop.shell32">
       <HintPath>Interop.Shell32.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ffmpeg.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

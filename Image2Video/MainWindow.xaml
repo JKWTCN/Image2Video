@@ -27,9 +27,11 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="AUTO"></ColumnDefinition>
                 <ColumnDefinition Width="1*"></ColumnDefinition>
+                <ColumnDefinition Width="0.5*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" >请选择你的BGM：</TextBlock>
             <ComboBox  Grid.Column="1" x:Name="BGM_Combo"  DisplayMemberPath="Name" SelectedValuePath="ID"></ComboBox>
+            <TextBlock Grid.Column="2" x:Name="thread_text" HorizontalAlignment="Center" VerticalAlignment="Center">活跃线程/总线程:0/0</TextBlock>
 
         </Grid>
         <Grid Grid.Row="2">
@@ -118,7 +120,7 @@
             <CheckBox Grid.Column="1" IsChecked="False" HorizontalAlignment="Center" VerticalAlignment="Center" Name="is_all">包括目录内全部文件</CheckBox>
             <CheckBox Grid.Column="2" IsChecked="True" HorizontalAlignment="Center" VerticalAlignment="Center" Name="has_start">带头图</CheckBox>
             <CheckBox Grid.Column="3" IsChecked="False" HorizontalAlignment="Center" VerticalAlignment="Center" Name="has_end">带尾图</CheckBox>
-            <Button Grid.Column="4"  HorizontalAlignment="Center" Name="all_do" Height="19" VerticalAlignment="Top" Click="All_do_Click" >开始</Button>
+            <Button Grid.Column="4"  HorizontalAlignment="Center" Name="all_do" Height="19" VerticalAlignment="Center" Click="All_do_Click" >开始</Button>
         </Grid>
         <Grid Grid.Row="4" >
             <ProgressBar  x:Name="progressBar" Height="10"   />
