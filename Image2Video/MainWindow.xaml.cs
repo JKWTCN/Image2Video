@@ -231,7 +231,8 @@ namespace Image2Video
 
                 //合成MP4（无声）
                 Dispatcher.Invoke(() => thread_text.Text = $"合成无声视频");
-                System.Diagnostics.Process.Start("ffmpeg.exe", $" -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4").WaitForExit();
+                FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4");
+                //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4").WaitForExit();
                 GC.Collect();
 
                 // 处理MP3 生成和MP4同样长的MP3文件
@@ -255,20 +256,24 @@ namespace Image2Video
                         }
                         Dispatcher.Invoke(() => thread_text.Text = $"拼接合适长度的BGM");
                         //拼接合适长度的mp3
-                        System.Diagnostics.Process.Start("ffmpeg.exe", $" -i \"{concat_str}\" -y -acodec copy {cache_dir}\\b.mp3").WaitForExit();
+                        FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i \"{concat_str}\" -y -acodec copy {cache_dir}\\b.mp3");
+                        //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i \"{concat_str}\" -y -acodec copy {cache_dir}\\b.mp3").WaitForExit();
                         Dispatcher.Invoke(() => thread_text.Text = $"截取BGM到视频长度");
                         //截取mp3到mp4长度
-                        System.Diagnostics.Process.Start("ffmpeg.exe", $" -i {cache_dir}\\b.mp3 -t {mp4sec} -y -acodec copy {cache_dir}\\c.mp3").WaitForExit();
+                        FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\b.mp3 -t {mp4sec} -y -acodec copy {cache_dir}\\c.mp3");
+                        //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\b.mp3 -t {mp4sec} -y -acodec copy {cache_dir}\\c.mp3").WaitForExit();
                     }
                     else if (mp4sec < mp3sec)
                     {
                         Dispatcher.Invoke(() => thread_text.Text = $"截取BGM到视频长度");
                         //截取mp3到mp4长度
-                        System.Diagnostics.Process.Start("ffmpeg.exe", $" -i {cache_dir}\\1.mp3 -y -t {mp4sec} -acodec copy {cache_dir}\\c.mp3").WaitForExit();
+                        FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\1.mp3 -y -t {mp4sec} -acodec copy {cache_dir}\\c.mp3");
+                        //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\1.mp3 -y -t {mp4sec} -acodec copy {cache_dir}\\c.mp3").WaitForExit();
                     }
                     Dispatcher.Invoke(() => thread_text.Text = $"合成BGM和视频");
                     //合成mp3和mp4
-                    System.Diagnostics.Process.Start("ffmpeg.exe", $" -i {cache_dir}\\c.mp3 -i {cache_dir}\\output.mp4 -y {cache_dir}\\d.mp4").WaitForExit();
+                    FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\c.mp3 -i {cache_dir}\\output.mp4 -y {cache_dir}\\d.mp4");
+                    //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\c.mp3 -i {cache_dir}\\output.mp4 -y {cache_dir}\\d.mp4").WaitForExit();
 
                     Dispatcher.Invoke(() => thread_text.Text = $"导出带BGM的视频");
                     //导出带BGM的mp4
@@ -549,7 +554,27 @@ namespace Image2Video
             Debug.WriteLine($"{filePath}->{dir.GetDetailsOf(item, 27)}合{all_sec}秒");
             return all_sec;
         }
-
+        //调用FFmpeg（隐藏cmd窗口 ）
+        static Process FFmpegCmdProcessStartAndWaitForExit(string cmd)
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = "ffmpeg.exe", // 确保路径正确，或使用绝对路径
+                Arguments = cmd,
+                UseShellExecute = false,     // 不使用系统外壳启动
+                CreateNoWindow = true,       // 不创建窗口
+                RedirectStandardOutput = true, // 重定向标准输出
+                RedirectStandardError = true   // 重定向错误输出
+            };
+            //Console.WriteLine("Hello, World!");
+            Process process = new Process();
+            process.StartInfo = startInfo;
+            //System.Diagnostics.Process.Start("ffmpeg.exe", " -loglevel quiet -y -i 1.mp3 2.mp3");
+            //process.Start();
+            process.Start();
+            process.WaitForExit();
+            return process;
+        }
         //获取MP3时长
         private int ReadMp3During(string filePath)
         {
