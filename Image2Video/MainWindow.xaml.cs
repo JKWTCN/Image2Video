@@ -12,6 +12,7 @@ using Window = System.Windows.Window;
 namespace Image2Video
 {
 
+
     public class BGM
     {
         public int ID { get; set; }
@@ -25,6 +26,47 @@ namespace Image2Video
     /// 
     public partial class MainWindow : Window
     {
+
+
+        List<String> folderPaths = new List<string>();
+        /// <summary>
+        /// 打开文件夹（多选）组件
+        /// </summary>
+        private CommonOpenFileDialog commonOpenFileDialog;
+
+        /// <summary>
+        /// 初始化多选窗口组件
+        /// </summary>
+        private void InitCommonOpenFileDialog()
+        {
+            this.commonOpenFileDialog = new CommonOpenFileDialog();
+            //设置为选择文件夹
+            this.commonOpenFileDialog.IsFolderPicker = true;
+
+            //设置为多选
+            this.commonOpenFileDialog.Multiselect = true;
+            //设置标题
+            this.commonOpenFileDialog.Title = "选择要处理的文件夹(支持多选)";
+            //设置
+            this.commonOpenFileDialog.RestoreDirectory = true;
+        }
+
+        /// <summary>
+        /// 选择文件夹
+        /// </summary>
+        private void Select()
+        {
+            if (this.commonOpenFileDialog.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                //获得用户选择文件夹(多个)
+                folderPaths = this.commonOpenFileDialog.FileNames.ToList();
+                if (folderPaths.Count != 1)
+                    files_dir.Text = $"选择了{folderPaths.Count}个目录";
+                else
+                    files_dir.Text = folderPaths[0];
+            }
+        }
+
         private void BGM_LOAD()
         {
             List<BGM> list = new();
@@ -36,13 +78,14 @@ namespace Image2Video
             BGM_Combo.ItemsSource = list;
 
         }
-        String uuid = Guid.NewGuid().ToString();
+
 
         int now_thread = 0;
         int all_thread = 0;
         public MainWindow()
         {
             InitializeComponent();
+            InitCommonOpenFileDialog();
             //Debug.WriteLine(System.Environment.CurrentDirectory);
             this.Closing += CleanCache;
             //生成BGM文件夹
@@ -50,14 +93,14 @@ namespace Image2Video
                 Directory.CreateDirectory("./BGM");
             if (!Directory.Exists("./Cache"))
                 Directory.CreateDirectory("./Cache");
-            // 生成缓存文件夹
-            if (!Directory.Exists($"./Cache/{uuid}"))
-                Directory.CreateDirectory($"./Cache/{uuid}");
-            else
-            {
-                Directory.Delete($"./Cache/{uuid}", true);
-                Directory.CreateDirectory($"./Cache/{uuid}");
-            }
+            //// 生成缓存文件夹
+            //if (!Directory.Exists($"./Cache/{uuid}"))
+            //    Directory.CreateDirectory($"./Cache/{uuid}");
+            //else
+            //{
+            //    Directory.Delete($"./Cache/{uuid}", true);
+            //    Directory.CreateDirectory($"./Cache/{uuid}");
+            //}
             // 输出文件夹
             if (!Directory.Exists("./Res"))
                 Directory.CreateDirectory("./Res");
@@ -72,104 +115,80 @@ namespace Image2Video
         /// </summary>
         private void CleanCache(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (Directory.Exists($"./Cache/{uuid}"))
-                Directory.Delete($"./Cache/{uuid}", true);
+            if (Directory.Exists($"./Cache/"))
+                Directory.Delete($"./Cache/", true);
             Setting.UpdateSetting();
         }
 
         private void Open_files_Click(object sender, RoutedEventArgs e)
         {
-            CommonOpenFileDialog dialog = new CommonOpenFileDialog
-            {
-                IsFolderPicker = true
-            };
+            //CommonOpenFileDialog dialog = new CommonOpenFileDialog
+            //{
+            //    IsFolderPicker = true
+            //};
 
-            if (dialog.ShowDialog() != CommonFileDialogResult.Ok)
-            {
-                return;
-            }
-            string folderName = dialog.FileName;
-            files_dir.Text = folderName;
+            //if (dialog.ShowDialog() != CommonFileDialogResult.Ok)
+            //{
+            //    return;
+            //}
+            //string folderName = dialog.FileName;
+            //files_dir.Text = folderName;
+            Select();
         }
 
-        private void All_do_Click(object sender, RoutedEventArgs e)
+        private async void All_do_Click(object sender, RoutedEventArgs e)
         {
-            now_thread = 0;
-            all_thread = 0;
-            if (!Directory.Exists($"./Cache/{uuid}"))
-                Directory.CreateDirectory($"./Cache/{uuid}");
-            else
-            {
-                Directory.Delete($"./Cache/{uuid}", true);
-                Directory.CreateDirectory($"./Cache/{uuid}");
-            }
             // 输出文件夹
             if (!Directory.Exists("./Res"))
                 Directory.CreateDirectory("./Res");
-            if (files_dir.Text == null || files_dir.Text == "")
+            int index = 0;
+            foreach (var folderPath in folderPaths)
             {
-                return;
-            }
-            string[] filedirs;
-            if (is_all.IsChecked == true)
-                filedirs = Directory.GetFiles(files_dir.Text, "*", SearchOption.AllDirectories);
-            else filedirs = Directory.GetFiles(files_dir.Text, "*", SearchOption.TopDirectoryOnly);
-            //Debug.WriteLine(filedirs);
-            var i = 0;
-            var now_frame = 0;
-            progressBar.IsIndeterminate = false;
-
-
-            _ = Task.Run(() =>
-            {
-                bool btn_has_start = true, btn_has_end = false;
-                _ = Dispatcher.Invoke(() => btn_has_start = (bool)has_start.IsChecked);
-                _ = Dispatcher.Invoke(() => btn_has_end = (bool)has_end.IsChecked);
-                int all = 0;
-                if (btn_has_start == true)
-                    all++;
-                if (btn_has_end == true)
-                    all++;
-                all += filedirs.Length;
-                if (btn_has_start == true)
+                now_thread = 0;
+                all_thread = 0;
+                index += 1;
+                files_dir.Text = $"当前处理:{folderPath}({index}/{folderPaths.Count})";
+                String uuid = Guid.NewGuid().ToString();
+                if (!Directory.Exists($"./Cache/{uuid}"))
+                    Directory.CreateDirectory($"./Cache/{uuid}");
+                else
                 {
-                    i++;
-                    Debug.WriteLine("开始处理头图");
-                    Mat start = Cv2.ImRead("Res/start.png");
-                    var result = Standardize_images(ref start);
-                    FrameInfo frameInfo = new FrameInfo { mat = start, now_frame = now_frame };
-                    if (result)
-                    {
-                        int end_time = GetImg2frameOver(start, now_frame);
-                        new Thread(new ParameterizedThreadStart(Img2frameThread)).Start(frameInfo);
-                        now_thread++;
-                        all_thread++;
-                        now_frame = end_time;
-                    }
-                    else
-                    {
-                        int end_time = GetOverLongImg2frame(start, now_frame);
-                        new Thread(new ParameterizedThreadStart(LongImg2frameThread)).Start(frameInfo);
-                        now_thread++;
-                        all_thread++;
-                        now_frame = end_time;
-                    }
-                    Dispatcher.Invoke(() => thread_text.Text = $"活跃线程/总线程:{now_thread}/{all_thread}");
-                    Dispatcher.Invoke(() => progressBar.Value = 100 * 1 / all);
+                    Directory.Delete($"./Cache/{uuid}", true);
+                    Directory.CreateDirectory($"./Cache/{uuid}");
                 }
-                foreach (var file in filedirs)
+                if (folderPath == null || folderPath == "")
                 {
-                    Debug.WriteLine($"开始处理第{i}张");
-                    string ext = Path.GetExtension(file);
-                    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".PNG" || ext == ".JPEG" || ext == ".JPG")
+                    return;
+                }
+                string[] filedirs;
+                if (is_all.IsChecked == true)
+                    filedirs = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+                else filedirs = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
+                //Debug.WriteLine(filedirs);
+                var i = 0;
+                var now_frame = 0;
+                progressBar.IsIndeterminate = false;
+                await Task.Run(() =>
+                {
+                    bool btn_has_start = true, btn_has_end = false;
+                    _ = Dispatcher.Invoke(() => btn_has_start = (bool)has_start.IsChecked);
+                    _ = Dispatcher.Invoke(() => btn_has_end = (bool)has_end.IsChecked);
+                    int all = 0;
+                    if (btn_has_start == true)
+                        all++;
+                    if (btn_has_end == true)
+                        all++;
+                    all += filedirs.Length;
+                    if (btn_has_start == true)
                     {
                         i++;
-                        Mat mat = Cv2.ImRead(file);
-                        var result = Standardize_images(ref mat);
-                        FrameInfo frameInfo = new FrameInfo { mat = mat, now_frame = now_frame };
+                        Debug.WriteLine("开始处理头图");
+                        Mat start = Cv2.ImRead("Res/start.png");
+                        var result = Standardize_images(ref start);
+                        FrameInfo frameInfo = new FrameInfo { mat = start, now_frame = now_frame, uuid = uuid };
                         if (result)
                         {
-                            int end_time = GetImg2frameOver(mat, now_frame);
+                            int end_time = GetImg2frameOver(start, now_frame);
                             new Thread(new ParameterizedThreadStart(Img2frameThread)).Start(frameInfo);
                             now_thread++;
                             all_thread++;
@@ -177,133 +196,167 @@ namespace Image2Video
                         }
                         else
                         {
-                            int end_time = GetOverLongImg2frame(mat, now_frame);
+                            int end_time = GetOverLongImg2frame(start, now_frame);
                             new Thread(new ParameterizedThreadStart(LongImg2frameThread)).Start(frameInfo);
                             now_thread++;
                             all_thread++;
                             now_frame = end_time;
                         }
                         Dispatcher.Invoke(() => thread_text.Text = $"活跃线程/总线程:{now_thread}/{all_thread}");
-                        Dispatcher.Invoke(() => progressBar.Value = 100 * (i + 1) / all);
-
+                        Dispatcher.Invoke(() => progressBar.Value = 100 * 1 / all);
                     }
-                    else continue;
-                }
-                if (btn_has_end == true)
-                {
-                    i++;
-                    Debug.WriteLine("开始处理尾图");
-                    Mat end = Cv2.ImRead("Res/end.png");
-                    var result = Standardize_images(ref end);
-                    FrameInfo frameInfo = new FrameInfo { mat = end, now_frame = now_frame };
-                    if (result)
+                    foreach (var file in filedirs)
                     {
-                        int end_time = GetImg2frameOver(end, now_frame);
-                        new Thread(new ParameterizedThreadStart(Img2frameThread)).Start(frameInfo);
-                        now_thread++;
-                        all_thread++;
-                        now_frame = end_time;
+                        Debug.WriteLine($"{folderPath}:开始处理第{i}张");
+                        string ext = Path.GetExtension(file);
+                        if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".PNG" || ext == ".JPEG" || ext == ".JPG")
+                        {
+                            i++;
+                            Mat mat = Cv2.ImRead(file);
+                            var result = Standardize_images(ref mat);
+                            FrameInfo frameInfo = new FrameInfo { mat = mat, now_frame = now_frame, uuid = uuid };
+                            if (result)
+                            {
+                                int end_time = GetImg2frameOver(mat, now_frame);
+                                new Thread(new ParameterizedThreadStart(Img2frameThread)).Start(frameInfo);
+                                now_thread++;
+                                all_thread++;
+                                now_frame = end_time;
+                            }
+                            else
+                            {
+                                int end_time = GetOverLongImg2frame(mat, now_frame);
+                                new Thread(new ParameterizedThreadStart(LongImg2frameThread)).Start(frameInfo);
+                                now_thread++;
+                                all_thread++;
+                                now_frame = end_time;
+                            }
+                            Dispatcher.Invoke(() => thread_text.Text = $"活跃线程/总线程:{now_thread}/{all_thread}");
+                            Dispatcher.Invoke(() => progressBar.Value = 100 * (i + 1) / all);
+
+                        }
+                        else continue;
+                    }
+                    if (btn_has_end == true)
+                    {
+                        i++;
+                        Debug.WriteLine("开始处理尾图");
+                        Mat end = Cv2.ImRead("Res/end.png");
+                        var result = Standardize_images(ref end);
+                        FrameInfo frameInfo = new FrameInfo { mat = end, now_frame = now_frame, uuid = uuid };
+                        if (result)
+                        {
+                            int end_time = GetImg2frameOver(end, now_frame);
+                            new Thread(new ParameterizedThreadStart(Img2frameThread)).Start(frameInfo);
+                            now_thread++;
+                            all_thread++;
+                            now_frame = end_time;
+                        }
+                        else
+                        {
+                            int end_time = GetOverLongImg2frame(end, now_frame);
+                            new Thread(new ParameterizedThreadStart(LongImg2frameThread)).Start(frameInfo);
+                            now_thread++;
+                            all_thread++;
+                            now_frame = end_time;
+                        }
+                        Dispatcher.Invoke(() => thread_text.Text = $"活跃线程/总线程:{now_thread}/{all_thread}");
+                        Dispatcher.Invoke(() => progressBar.Value = 100);
+                    }
+                    Dispatcher.Invoke(() => progressBar.IsIndeterminate = true);
+                    string fps_text = "60", file_dir_text = "", bgm_dir_text = "";
+                    Dispatcher.Invoke(() => fps_text = fps.Text);
+                    Dispatcher.Invoke(() => file_dir_text = folderPath);
+                    Dispatcher.Invoke(() => bgm_dir_text = BGM_Combo.Text);
+                    string ffmpeg_path = System.Environment.CurrentDirectory + @"\ffmpeg\ffmpeg.exe";
+                    string cache_dir = $"Cache\\{uuid}";
+                    while (now_thread > 0)
+                    {
+                        Dispatcher.Invoke(() => thread_text.Text = $"活跃线程/总线程:{now_thread}/{all_thread}");
+                        Thread.Sleep(100);
+                    }
+
+
+                    //合成MP4（无声）
+                    Dispatcher.Invoke(() => thread_text.Text = $"合成无声视频");
+                    FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4");
+                    //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4").WaitForExit();
+                    GC.Collect();
+
+                    // 处理MP3 生成和MP4同样长的MP3文件
+                    if (bgm_dir_text != "" && bgm_dir_text != null)
+                    {
+                        int mp4sec = ReadMp4During(System.Environment.CurrentDirectory + $"\\Cache\\{uuid}\\output.mp4");
+                        int mp3sec = ReadMp3During(bgm_dir_text);
+                        FileInfo file = new FileInfo(bgm_dir_text);
+                        if (file.Exists) //可以判断源文件是否存在
+                        {
+                            // 这里是true的话覆盖
+                            file.CopyTo($"{System.Environment.CurrentDirectory}\\Cache\\{uuid}\\1.mp3", true);
+                        }
+                        string concat_str = $"concat:{cache_dir}\\1.mp3";
+                        if (mp4sec > mp3sec)
+                        {
+                            //计算mp3长度
+                            for (i = 0; i < Math.Ceiling((double)mp4sec / (double)mp3sec); i++)
+                            {
+                                concat_str += $"|{cache_dir}\\1.mp3";
+                            }
+                            Dispatcher.Invoke(() => thread_text.Text = $"拼接合适长度的BGM");
+                            //拼接合适长度的mp3
+                            FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i \"{concat_str}\" -y -acodec copy {cache_dir}\\b.mp3");
+                            //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i \"{concat_str}\" -y -acodec copy {cache_dir}\\b.mp3").WaitForExit();
+                            Dispatcher.Invoke(() => thread_text.Text = $"截取BGM到视频长度");
+                            //截取mp3到mp4长度
+                            FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\b.mp3 -t {mp4sec} -y -acodec copy {cache_dir}\\c.mp3");
+                            //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\b.mp3 -t {mp4sec} -y -acodec copy {cache_dir}\\c.mp3").WaitForExit();
+                        }
+                        else if (mp4sec < mp3sec)
+                        {
+                            Dispatcher.Invoke(() => thread_text.Text = $"截取BGM到视频长度");
+                            //截取mp3到mp4长度
+                            FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\1.mp3 -y -t {mp4sec} -acodec copy {cache_dir}\\c.mp3");
+                            //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\1.mp3 -y -t {mp4sec} -acodec copy {cache_dir}\\c.mp3").WaitForExit();
+                        }
+                        Dispatcher.Invoke(() => thread_text.Text = $"合成BGM和视频");
+                        //合成mp3和mp4
+                        FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\c.mp3 -i {cache_dir}\\output.mp4 -y {cache_dir}\\d.mp4");
+                        //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\c.mp3 -i {cache_dir}\\output.mp4 -y {cache_dir}\\d.mp4").WaitForExit();
+
+                        Dispatcher.Invoke(() => thread_text.Text = $"导出带BGM的视频");
+                        //导出带BGM的mp4
+                        var files_dir_list = file_dir_text.Split("\\");
+                        if (File.Exists($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4"))
+                        {
+                            File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                        }
+                        File.Move($"./Cache/{uuid}/d.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
                     }
                     else
                     {
-                        int end_time = GetOverLongImg2frame(end, now_frame);
-                        new Thread(new ParameterizedThreadStart(LongImg2frameThread)).Start(frameInfo);
-                        now_thread++;
-                        all_thread++;
-                        now_frame = end_time;
-                    }
-                    Dispatcher.Invoke(() => thread_text.Text = $"活跃线程/总线程:{now_thread}/{all_thread}");
-                    Dispatcher.Invoke(() => progressBar.Value = 100);
-                }
-                Dispatcher.Invoke(() => progressBar.IsIndeterminate = true);
-                string fps_text = "60", file_dir_text = "", bgm_dir_text = "";
-                Dispatcher.Invoke(() => fps_text = fps.Text);
-                Dispatcher.Invoke(() => file_dir_text = files_dir.Text);
-                Dispatcher.Invoke(() => bgm_dir_text = BGM_Combo.Text);
-                string ffmpeg_path = System.Environment.CurrentDirectory + @"\ffmpeg\ffmpeg.exe";
-                string cache_dir = $"Cache\\{uuid}";
-                while (now_thread > 0)
-                {
-                    Dispatcher.Invoke(() => thread_text.Text = $"活跃线程/总线程:{now_thread}/{all_thread}");
-                    Thread.Sleep(100);
-                }
-
-
-                //合成MP4（无声）
-                Dispatcher.Invoke(() => thread_text.Text = $"合成无声视频");
-                FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4");
-                //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -y -r {fps_text} -i {cache_dir}\\%d.jpg {cache_dir}\\output.mp4").WaitForExit();
-                GC.Collect();
-
-                // 处理MP3 生成和MP4同样长的MP3文件
-                if (bgm_dir_text != "" && bgm_dir_text != null)
-                {
-                    int mp4sec = ReadMp4During(System.Environment.CurrentDirectory + $"\\Cache\\{uuid}\\output.mp4");
-                    int mp3sec = ReadMp3During(bgm_dir_text);
-                    FileInfo file = new FileInfo(bgm_dir_text);
-                    if (file.Exists) //可以判断源文件是否存在
-                    {
-                        // 这里是true的话覆盖
-                        file.CopyTo($"{System.Environment.CurrentDirectory}\\Cache\\{uuid}\\1.mp3", true);
-                    }
-                    string concat_str = $"concat:{cache_dir}\\1.mp3";
-                    if (mp4sec > mp3sec)
-                    {
-                        //计算mp3长度
-                        for (i = 0; i < Math.Ceiling((double)mp4sec / (double)mp3sec); i++)
+                        Dispatcher.Invoke(() => thread_text.Text = $"导出视频");
+                        // 导出无声MP4
+                        var files_dir_list = file_dir_text.Split("\\");
+                        if (File.Exists($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4"))
                         {
-                            concat_str += $"|{cache_dir}\\1.mp3";
+                            File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
                         }
-                        Dispatcher.Invoke(() => thread_text.Text = $"拼接合适长度的BGM");
-                        //拼接合适长度的mp3
-                        FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i \"{concat_str}\" -y -acodec copy {cache_dir}\\b.mp3");
-                        //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i \"{concat_str}\" -y -acodec copy {cache_dir}\\b.mp3").WaitForExit();
-                        Dispatcher.Invoke(() => thread_text.Text = $"截取BGM到视频长度");
-                        //截取mp3到mp4长度
-                        FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\b.mp3 -t {mp4sec} -y -acodec copy {cache_dir}\\c.mp3");
-                        //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\b.mp3 -t {mp4sec} -y -acodec copy {cache_dir}\\c.mp3").WaitForExit();
-                    }
-                    else if (mp4sec < mp3sec)
-                    {
-                        Dispatcher.Invoke(() => thread_text.Text = $"截取BGM到视频长度");
-                        //截取mp3到mp4长度
-                        FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\1.mp3 -y -t {mp4sec} -acodec copy {cache_dir}\\c.mp3");
-                        //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\1.mp3 -y -t {mp4sec} -acodec copy {cache_dir}\\c.mp3").WaitForExit();
-                    }
-                    Dispatcher.Invoke(() => thread_text.Text = $"合成BGM和视频");
-                    //合成mp3和mp4
-                    FFmpegCmdProcessStartAndWaitForExit($" -loglevel quiet -i {cache_dir}\\c.mp3 -i {cache_dir}\\output.mp4 -y {cache_dir}\\d.mp4");
-                    //System.Diagnostics.Process.Start("ffmpeg.exe", $" -loglevel quiet -i {cache_dir}\\c.mp3 -i {cache_dir}\\output.mp4 -y {cache_dir}\\d.mp4").WaitForExit();
+                        File.Move($"./Cache/{uuid}/output.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
 
-                    Dispatcher.Invoke(() => thread_text.Text = $"导出带BGM的视频");
-                    //导出带BGM的mp4
-                    var files_dir_list = file_dir_text.Split("\\");
-                    if (File.Exists($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4"))
-                    {
-                        File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
                     }
-                    File.Move($"./Cache/{uuid}/d.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
-                }
-                else
-                {
-                    Dispatcher.Invoke(() => thread_text.Text = $"导出视频");
-                    // 导出无声MP4
-                    var files_dir_list = file_dir_text.Split("\\");
-                    if (File.Exists($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4"))
-                    {
-                        File.Delete($"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
-                    }
-                    File.Move($"./Cache/{uuid}/output.mp4", $"Res/{files_dir_list[files_dir_list.Length - 1]}.mp4");
+                    Dispatcher.Invoke(() => progressBar.IsIndeterminate = false);
+                    Dispatcher.Invoke(() => thread_text.Text = $"开始清理缓存");
+                    //清理缓存
+                    if (Directory.Exists($"./Cache/{uuid}"))
+                        Directory.Delete($"./Cache/{uuid}", true);
+                    GC.Collect();
+                    Dispatcher.Invoke(() => thread_text.Text = $"完成");
+                });
+                //todo 等待前面的Task完成
 
-                }
-                Dispatcher.Invoke(() => progressBar.IsIndeterminate = false);
-                Dispatcher.Invoke(() => thread_text.Text = $"开始清理缓存");
-                //清理缓存
-                if (Directory.Exists($"./Cache/{uuid}"))
-                    Directory.Delete($"./Cache/{uuid}", true);
-                GC.Collect();
-                Dispatcher.Invoke(() => thread_text.Text = $"完成");
-            });
+            }
+            folderPaths.Clear();
+            files_dir.Text = $"全部完成";
         }
 
         private Boolean Standardize_images(ref Mat mat)
@@ -407,7 +460,7 @@ namespace Image2Video
         /// <summary>
         /// 长图片转帧
         /// </summary>
-        private void LongImg2frame(Mat mat, int now_frame)
+        private void LongImg2frame(Mat mat, int now_frame, string uuid)
         {
             int canvas_width = 1080, canvas_height = 1920, f = 60, velocity = 1000, _long_image_start = 500, _sec = 5, _long_image_end = 500;
             Dispatcher.Invoke(() => canvas_width = ret_width.Text.Length > 0 ? int.Parse(ret_width.Text) : 1080);
@@ -478,8 +531,9 @@ namespace Image2Video
         /// <summary>
         /// 短图片转帧
         /// </summary>
-        private void Img2frame(Mat mat, int now_frame)
+        private void Img2frame(Mat mat, int now_frame, string uuid)
         {
+            int start_frame = now_frame;
             int sec = 5, f = 60;
             Dispatcher.Invoke(() => sec = duration.Text.Length > 0 ? int.Parse(duration.Text) : 5);
             Dispatcher.Invoke(() => f = fps.Text.Length > 0 ? int.Parse(fps.Text) : 60);
@@ -490,13 +544,14 @@ namespace Image2Video
                 GC.Collect();
             }
             now_thread--;
-
+            Debug.WriteLine($"{start_frame}~{now_frame}处理结束");
         }
 
         struct FrameInfo
         {
             public Mat mat;
             public int now_frame;
+            public string uuid;
         };
 
         /// <summary>
@@ -505,7 +560,7 @@ namespace Image2Video
         private void LongImg2frameThread(object frame_info)
         {
             FrameInfo frame_info1 = (FrameInfo)frame_info;
-            LongImg2frame(frame_info1.mat, frame_info1.now_frame);
+            LongImg2frame(frame_info1.mat, frame_info1.now_frame, frame_info1.uuid);
         }
 
         /// <summary>
@@ -514,7 +569,7 @@ namespace Image2Video
         private void Img2frameThread(object frame_info)
         {
             FrameInfo frame_info1 = (FrameInfo)frame_info;
-            Img2frame(frame_info1.mat, frame_info1.now_frame);
+            Img2frame(frame_info1.mat, frame_info1.now_frame, frame_info1.uuid);
         }
 
         private void open_bgm_Click(object sender, RoutedEventArgs e)
@@ -573,6 +628,7 @@ namespace Image2Video
             //process.Start();
             process.Start();
             process.WaitForExit();
+            Debug.WriteLine($"{cmd}执行完成");
             return process;
         }
         //获取MP3时长

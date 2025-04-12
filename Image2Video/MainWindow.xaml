@@ -19,7 +19,7 @@
                 <ColumnDefinition Width="3.5*"></ColumnDefinition>
                 <ColumnDefinition Width="1*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" x:Name="files_dir" ></TextBox>
+            <TextBlock Grid.Column="0" x:Name="files_dir" ></TextBlock>
             <Button  Grid.Column="1" Name="open_files"  Height="19" VerticalAlignment="Bottom" Click="Open_files_Click">打开文件夹</Button>
 
         </Grid>
